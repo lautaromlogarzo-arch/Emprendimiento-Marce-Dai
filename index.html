@@ -149,7 +149,7 @@
                             </div>
                             <div class="mb-2">
                                 <label>Teléfono (WhatsApp)</label>
-                                <input type="number" id="cli-telefono" class="form-control" placeholder="Ej: 54911..." required>
+                                <input type="number" id="cli-telefono" class="form-control" placeholder="Ej: 1124041633" required>
                             </div>
                             <div class="mb-2">
                                 <label>Producto a vender</label>
@@ -621,7 +621,14 @@
         }
 
         const cliente = carritoActual[0].cliente;
-        const telefono = carritoActual[0].telefono;
+        let telefono = carritoActual[0].telefono.toString(); // Asegurar que sea string
+        
+        // CORRECCIÓN WHATSAPP ANDROID: 
+        // Si el número tiene 10 dígitos (ej: 1124041633), agregamos 549 adelante automáticamente
+        if (telefono.length === 10) {
+            telefono = "549" + telefono;
+        }
+
         let total = 0;
         let detalle = "";
 
@@ -630,7 +637,8 @@
             total += item.precioTotal;
         });
 
-        const mensaje = `Hola ${cliente}! Confirmamos tu pedido:\n\n${detalle}\nEl total es de: *$${total}*.\n\nDatos para transferir: [ACA TUS DATOS DE CBU/ALIAS].\n\n¡Gracias por tu compra!`;
+        // CORRECCIÓN MENSAJE MERCADO PAGO
+        const mensaje = `Hola ${cliente}! Confirmamos tu pedido:\n\n${detalle}\nEl total es de: *$${total}*.\n\nDatos para transferir:\nMercado Pago\nAlias: Mieles.naturales\nA nombre de Daiana Gisela Logarzo\n\n¡Gracias por tu compra!`;
         const url = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
         window.open(url, '_blank');
     });

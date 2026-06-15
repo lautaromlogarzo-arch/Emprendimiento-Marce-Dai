@@ -53,7 +53,7 @@
                 LAUTARO LABS ENGINEERING
             </div>
         </div>
-        <h2 class="mb-0 ms-auto">Panel de Control - Emprendimiento</h2>
+        <h2 class="mb-0 ms-auto">PANEL CENTRAL DE CONTROL</h2>
     </div>
 
     <!-- Barra de solapas -->
@@ -179,8 +179,8 @@
                             <li class="list-group-item text-muted">No hay productos en el pedido aún.</li>
                         </ul>
                         <h4 class="text-end mb-3">Total a Cobrar: $<span id="total-carrito">0</span></h4>
-                        <button type="button" id="btn-confirmar-venta" class="btn btn-success w-100 mb-2">Confirmar Pedido Completo y Bajar Stock</button>
-                        <button type="button" id="btn-whatsapp" class="btn btn-outline-success w-100">Generar Mensaje WhatsApp</button>
+                        <button type="button" id="btn-whatsapp" class="btn btn-outline-success w-100 mb-2">1) Generar Mensaje WhatsApp</button>
+                        <button type="button" id="btn-confirmar-venta" class="btn btn-success w-100">2) Confirmar Pedido Completo y Bajar Stock</button>
                     </div>
                 </div>
             </div>
@@ -233,6 +233,19 @@
             </div>
         </div>
 
+    </div>
+</div>
+
+<!-- Modal de Confirmación de Mensaje -->
+<div class="modal fade" id="modalConfirmacion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <h5 class="mb-4">¿Estás seguro que ya generaste el mensaje al cliente?</h5>
+                <button type="button" class="btn btn-outline-danger me-3" data-bs-dismiss="modal">No</button>
+                <button type="button" class="btn btn-success px-4" id="btn-si-confirmar">Sí</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -540,11 +553,22 @@
         recalcularPrecioPorDefecto();
     });
 
-    document.getElementById("btn-confirmar-venta").addEventListener("click", async () => {
+    // Lógica para ABRIR el modal de confirmación
+    document.getElementById("btn-confirmar-venta").addEventListener("click", () => {
         if (carritoActual.length === 0) {
             alert("El pedido está vacío. Agregá productos al subtotal primero.");
             return;
         }
+        // Abre el modal flotante de Bootstrap
+        let miModal = new bootstrap.Modal(document.getElementById('modalConfirmacion'));
+        miModal.show();
+    });
+
+    // Lógica de SÍ confirmar (botón verde del modal)
+    document.getElementById("btn-si-confirmar").addEventListener("click", async () => {
+        // Ocultamos el modal
+        let miModal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmacion'));
+        if (miModal) miModal.hide();
 
         try {
             const fechaVenta = new Date();

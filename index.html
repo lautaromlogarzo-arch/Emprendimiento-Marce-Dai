@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Stock y Ventas</title>
+    <!-- Ícono para la pestaña del navegador -->
+    <link rel="icon" type="image/png" href="nuez_transparente.png">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background-color: #ffffff; }
+        .card { box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-radius: 10px; }
+        
+        .encabezado-naranja {
+            background-color: #f39c12; 
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px 10px 0 0;
+            margin-bottom: 0;
+        }
+        
+        .barra-solapas {
+            background-color: #fdebd0; 
+            padding: 10px 10px 0 10px;
+            border-radius: 0 0 10px 10px;
+            margin-bottom: 20px;
+        }
+
+        .nav-tabs { border-bottom: none; }
+        .nav-tabs .nav-link { color: #555; font-weight: 500; border: none; }
+        .nav-tabs .nav-link:hover { border: none; color: #d35400; }
+        .nav-tabs .nav-link.active { 
+            font-weight: bold; 
+            color: #d35400; 
+            background-color: #ffffff; 
+            border-radius: 8px 8px 0 0;
+        }
+
+        .cursor-pointer { cursor: pointer; }
+        .fila-desplegable { background-color: #f1f4f8; }
+    </style>
+</head>
+<body>
+
+<div class="container mt-4">
+    <!-- Encabezado con Logo a la izquierda, más grande y sin fondo blanco -->
+    <div class="encabezado-naranja d-flex align-items-center">
+        <div class="text-center me-4">
+            <img src="logo_LL.png" alt="Logo LL" style="max-height: 80px;">
+            <div style="font-family: Arial, sans-serif; font-weight: 900; font-size: 18px; margin-top: 5px; color: #000; text-transform: uppercase;">
+                LAUTARO LABS ENGINEERING
+            </div>
+        </div>
+        <h2 class="mb-0 ms-auto">Panel de Control - Emprendimiento</h2>
+    </div>
+
+    <!-- Barra de solapas -->
+    <div class="barra-solapas">
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="stock-tab" data-bs-toggle="tab" data-bs-target="#stock" type="button" role="tab">1. Ingreso de stock</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="resumen-tab" data-bs-toggle="tab" data-bs-target="#resumen" type="button" role="tab">2. Resumen de Stock</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="ventas-tab" data-bs-toggle="tab" data-bs-target="#ventas" type="button" role="tab">3. Ventas y Clientes</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="historial-tab" data-bs-toggle="tab" data-bs-target="#historial" type="button" role="tab">4. Historial de Ventas</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tracking-tab" data-bs-toggle="tab" data-bs-target="#tracking" type="button" role="tab">5. Tracking Financiero</button>
+            </li>
+        </ul>
+    </div>
+
+    <div class="tab-content" id="myTabContent">
+
+        <!-- SOLAPA 1: INGRESO DE STOCK -->
+        <div class="tab-pane fade show active" id="stock" role="tabpanel">
+            <div class="row">
+                <div class="col-md-5">
+                    <div class="card p-3">
+                        <h5>Cargar Nuevo Producto</h5>
+                        <form id="form-stock">
+                            <div class="mb-2">
+                                <label>Nombre / Tipo</label>
+                                <input type="text" id="prod-nombre" class="form-control" placeholder="Ej: Miel de Canela" list="lista-productos-nombres" required>
+                                <datalist id="lista-productos-nombres"></datalist>
+                            </div>
+                            <div class="mb-2">
+                                <label>Prefijo Alfanumérico</label>
+                                <input type="text" id="prod-prefijo" class="form-control" placeholder="Ej: MCM (se generará MCM-00001)" required>
+                            </div>
+                            <div class="mb-2">
+                                <label>Cantidad a ingresar</label>
+                                <input type="number" id="prod-cantidad" class="form-control" required>
+                            </div>
+                            <div class="mb-2">
+                                <label>Costo Unitario ($)</label>
+                                <input type="number" id="prod-costo" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label>Precio de Venta ($)</label>
+                                <input type="number" id="prod-precio" class="form-control" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Cargar Stock</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SOLAPA 2: RESUMEN DE STOCK -->
+        <div class="tab-pane fade" id="resumen" role="tabpanel">
+            <div class="card p-4">
+                <h5 class="mb-3">Stock Detallado (Agrupado)</h5>
+                <p class="text-muted small">Tocá una fila para desplegar los códigos individuales.</p>
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Prefijo</th>
+                            <th>Nombre</th>
+                            <th>Cant.</th>
+                            <th>Precio</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-stock-detallado">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SOLAPA 3: VENTAS Y CLIENTES -->
+        <div class="tab-pane fade" id="ventas" role="tabpanel">
+            <div class="row">
+                <div class="col-md-5">
+                    <div class="card p-3">
+                        <h5>Datos del Cliente y Producto</h5>
+                        <form id="form-venta">
+                            <div class="mb-2">
+                                <label>Nombre del Comprador</label>
+                                <input type="text" id="cli-nombre" class="form-control" list="lista-clientes-nombres" required>
+                                <datalist id="lista-clientes-nombres"></datalist>
+                            </div>
+                            <div class="mb-2">
+                                <label>Teléfono (WhatsApp)</label>
+                                <input type="number" id="cli-telefono" class="form-control" placeholder="Ej: 54911..." required>
+                            </div>
+                            <div class="mb-2">
+                                <label>Producto a vender</label>
+                                <select id="cli-producto" class="form-control" required>
+                                    <option value="">Seleccione un producto en stock</option>
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label>Cantidad a agregar</label>
+                                <input type="number" id="cli-cantidad-vender" class="form-control" value="1" min="1" required>
+                            </div>
+                            <div class="mb-3">
+                                <label>Precio Final (Total por este ítem)</label>
+                                <input type="number" id="cli-precio-final" class="form-control" required>
+                            </div>
+                            <button type="button" id="btn-agregar-carrito" class="btn btn-primary w-100 mb-2">Agregar al Pedido (Subtotal)</button>
+                        </form>
+                        <div class="alert alert-info mt-3" id="metricas-ganancia">
+                            Aquí aparecerá el margen de ganancia al seleccionar un producto...
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-7">
+                    <div class="card p-3">
+                        <h5>Subtotal del Pedido Actual</h5>
+                        <ul class="list-group mb-3" id="lista-carrito">
+                            <li class="list-group-item text-muted">No hay productos en el pedido aún.</li>
+                        </ul>
+                        <h4 class="text-end mb-3">Total a Cobrar: $<span id="total-carrito">0</span></h4>
+                        <button type="button" id="btn-confirmar-venta" class="btn btn-success w-100 mb-2">Confirmar Pedido Completo y Bajar Stock</button>
+                        <button type="button" id="btn-whatsapp" class="btn btn-outline-success w-100">Generar Mensaje WhatsApp</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SOLAPA 4: HISTORIAL DE VENTAS -->
+        <div class="tab-pane fade" id="historial" role="tabpanel">
+            <div class="card p-4">
+                <h4 class="mb-3">Historial de Ventas</h4>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Producto (Código)</th>
+                            <th>Cant.</th>
+                            <th>Costo Total</th>
+                            <th>Venta</th>
+                            <th>Ganancia (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-historial">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SOLAPA 5: TRACKING FINANCIERO -->
+        <div class="tab-pane fade" id="tracking" role="tabpanel">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card p-4 text-center text-white" style="background-color: #28a745;">
+                        <h5 class="mb-2">Ganancia Total Generada</h5>
+                        <h2 id="mostrar-ganancia-total">$0</h2>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card p-4 text-center text-white" style="background-color: #dc3545;">
+                        <h5 class="mb-2">Gasto Total Generado</h5>
+                        <h2 id="mostrar-gasto-total">$0</h2>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card p-4 d-flex align-items-center">
+                <h5 class="mb-4">Cantidad de Ventas por Mes</h5>
+                <div style="width: 100%; max-width: 500px;">
+                    <canvas id="graficoVentas"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, getDoc, setDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCDh_3Xb2YL8r3BdvI36tl8_fTALixIbY8",
+      authDomain: "marcelo-emprendimiento.firebaseapp.com",
+      projectId: "marcelo-emprendimiento",
+      storageBucket: "marcelo-emprendimiento.firebasestorage.app",
+      messagingSenderId: "891744935643",
+      appId: "1:891744935643:web:a066662f64575b0580b6fe"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let productosActuales = [];
+    let carritoActual = []; // Array para manejar el subtotal
+
+    const ctx = document.getElementById('graficoVentas').getContext('2d');
+    const miGrafico = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+            datasets: [{
+                label: 'Ventas Realizadas',
+                data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                backgroundColor: [
+                    '#f39c12', '#e74c3c', '#9b59b6', '#3498db', '#2ecc71', '#1abc9c',
+                    '#f1c40f', '#e67e22', '#d35400', '#c0392b', '#8e44ad', '#2980b9'
+                ]
+            }]
+        }
+    });
+
+    onSnapshot(collection(db, "productos"), (snapshot) => {
+        productosActuales = [];
+        let gastoTotalCalculado = 0;
+
+        const tabla = document.getElementById("tabla-stock-detallado");
+        const selectVenta = document.getElementById("cli-producto");
+        const datalistProductos = document.getElementById("lista-productos-nombres");
+        
+        tabla.innerHTML = "";
+        selectVenta.innerHTML = '<option value="">Seleccione un producto...</option>';
+        datalistProductos.innerHTML = "";
+
+        let nombresUnicos = new Set();
+
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const id = docSnap.id;
+            
+            let codigosActivos = data.codigosActivos || [];
+            let cantidadReal = codigosActivos.length;
+            
+            let totalUnidadesHistoricas = data.ultimoSecuencial || codigosActivos.length;
+            gastoTotalCalculado += (totalUnidadesHistoricas * (data.costo || 0));
+
+            productosActuales.push({ id, ...data, cantidadReal });
+
+            if(!nombresUnicos.has(data.nombre)) {
+                nombresUnicos.add(data.nombre);
+                datalistProductos.innerHTML += `<option value="${data.nombre}">`;
+            }
+
+            let codigosBadge = codigosActivos.map(c => `<span class="badge bg-secondary me-1">${c}</span>`).join('');
+            
+            tabla.innerHTML += `
+                <tr class="cursor-pointer" data-bs-toggle="collapse" data-bs-target="#colapsa-${id}">
+                    <td><strong>${data.prefijo}</strong></td>
+                    <td>${data.nombre} ⬇️</td>
+                    <td>${cantidadReal}</td>
+                    <td>$${data.precio}</td>
+                    <td>
+                        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); eliminarProducto('${id}')">X</button>
+                    </td>
+                </tr>
+                <tr id="colapsa-${id}" class="collapse fila-desplegable">
+                    <td colspan="5">
+                        <strong>Códigos en stock:</strong><br>
+                        ${codigosBadge || 'Sin stock'}
+                    </td>
+                </tr>
+            `;
+
+            if(cantidadReal > 0) {
+                selectVenta.innerHTML += `<option value="${id}">${data.nombre} (${data.prefijo}) - $${data.precio} (Stock: ${cantidadReal})</option>`;
+            }
+        });
+
+        document.getElementById("mostrar-gasto-total").innerText = "$" + gastoTotalCalculado.toFixed(2);
+    });
+
+    onSnapshot(collection(db, "ventas"), (snapshot) => {
+        const tablaHistorial = document.getElementById("tabla-historial");
+        const datalistClientes = document.getElementById("lista-clientes-nombres");
+        
+        tablaHistorial.innerHTML = "";
+        datalistClientes.innerHTML = "";
+        
+        let clientesUnicos = new Set();
+        let ventas = [];
+        
+        let gananciaTotalCalculada = 0;
+        let ventasPorMes = new Array(12).fill(0);
+
+        snapshot.forEach(doc => ventas.push(doc.data()));
+        ventas.sort((a, b) => b.fecha.toDate() - a.fecha.toDate());
+
+        ventas.forEach((venta) => {
+            if(!clientesUnicos.has(venta.cliente)) {
+                clientesUnicos.add(venta.cliente);
+                datalistClientes.innerHTML += `<option value="${venta.cliente}">`;
+            }
+
+            let cant = venta.cantidadVendida || 1;
+            let costo = venta.costo || 0;
+            let costoTotal = costo * cant;
+            let margenReal = venta.precioPagado - costoTotal;
+            let margenPorcentaje = costoTotal > 0 ? ((margenReal / costoTotal) * 100).toFixed(2) : 100;
+            
+            gananciaTotalCalculada += margenReal;
+
+            let mesVenta = venta.fecha.toDate().getMonth();
+            ventasPorMes[mesVenta] += 1;
+
+            let fechaStr = venta.fecha.toDate().toLocaleString('es-AR', {dateStyle: 'short', timeStyle: 'short'});
+
+            tablaHistorial.innerHTML += `
+                <tr>
+                    <td>${fechaStr}</td>
+                    <td>${venta.cliente}</td>
+                    <td>${venta.productoNombre} <br><small class="text-muted">${venta.codigoUnico}</small></td>
+                    <td>${cant}</td>
+                    <td>$${costoTotal}</td>
+                    <td>$${venta.precioPagado}</td>
+                    <td><strong>${margenPorcentaje}%</strong> ($${margenReal})</td>
+                </tr>
+            `;
+        });
+
+        document.getElementById("mostrar-ganancia-total").innerText = "$" + gananciaTotalCalculada.toFixed(2);
+        miGrafico.data.datasets[0].data = ventasPorMes;
+        miGrafico.update();
+    });
+
+    document.getElementById("form-stock").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const nombre = document.getElementById("prod-nombre").value;
+        const prefijo = document.getElementById("prod-prefijo").value.toUpperCase();
+        const cantidad = parseInt(document.getElementById("prod-cantidad").value);
+        const costo = parseFloat(document.getElementById("prod-costo").value);
+        const precio = parseFloat(document.getElementById("prod-precio").value);
+
+        try {
+            const docRef = doc(db, "productos", prefijo);
+            const docSnap = await getDoc(docRef);
+
+            let ultimoSecuencial = 0;
+            let codigosActivos = [];
+
+            if (docSnap.exists()) {
+                let data = docSnap.data();
+                ultimoSecuencial = data.ultimoSecuencial || 0;
+                codigosActivos = data.codigosActivos || [];
+            }
+
+            for(let i = 0; i < cantidad; i++) {
+                ultimoSecuencial++;
+                let numFormateado = String(ultimoSecuencial).padStart(5, '0');
+                codigosActivos.push(`${prefijo}-${numFormateado}`);
+            }
+
+            await setDoc(docRef, {
+                nombre: nombre,
+                prefijo: prefijo,
+                costo: costo,
+                precio: precio,
+                ultimoSecuencial: ultimoSecuencial,
+                codigosActivos: codigosActivos,
+                ultimaActualizacion: new Date()
+            }, { merge: true });
+
+            document.getElementById("form-stock").reset();
+            alert("¡Stock cargado y códigos generados!");
+
+        } catch (error) {
+            console.error("Error al cargar:", error);
+            alert("Error: " + error.message);
+        }
+    });
+
+    // --- LÓGICA DE VENTAS (SUBTOTAL) ---
+    const selectProducto = document.getElementById("cli-producto");
+    const inputPrecioFinal = document.getElementById("cli-precio-final");
+    const inputCantidadVender = document.getElementById("cli-cantidad-vender");
+    const metricas = document.getElementById("metricas-ganancia");
+    
+    let prodSeleccionadoInfo = null;
+
+    function recalcularPrecioPorDefecto() {
+        if(prodSeleccionadoInfo) {
+            const cant = parseInt(inputCantidadVender.value) || 1;
+            inputPrecioFinal.value = prodSeleccionadoInfo.precio * cant;
+            calcularMargen();
+        }
+    }
+
+    selectProducto.addEventListener("change", (e) => {
+        const prodId = e.target.value;
+        prodSeleccionadoInfo = productosActuales.find(p => p.id === prodId);
+        recalcularPrecioPorDefecto();
+    });
+
+    inputCantidadVender.addEventListener("input", recalcularPrecioPorDefecto);
+    inputPrecioFinal.addEventListener("input", calcularMargen);
+
+    function calcularMargen() {
+        if(!prodSeleccionadoInfo) return;
+        const precioCobrado = parseFloat(inputPrecioFinal.value) || 0;
+        const cant = parseInt(inputCantidadVender.value) || 1;
+        const costoTotal = prodSeleccionadoInfo.costo * cant;
+        const gananciaReal = precioCobrado - costoTotal;
+        const gananciaPorcentaje = ((gananciaReal / costoTotal) * 100).toFixed(2);
+        
+        metricas.innerHTML = `
+            <strong>Margen de Ganancia (Total de este ítem):</strong><br>
+            Ganancia Real: $${gananciaReal}<br>
+            Porcentual: ${gananciaPorcentaje}%
+        `;
+    }
+
+    function actualizarUICarrito() {
+        const lista = document.getElementById("lista-carrito");
+        const spanTotal = document.getElementById("total-carrito");
+        lista.innerHTML = "";
+        let total = 0;
+
+        if(carritoActual.length === 0) {
+            lista.innerHTML = '<li class="list-group-item text-muted">No hay productos en el pedido aún.</li>';
+        } else {
+            carritoActual.forEach((item, index) => {
+                total += item.precioTotal;
+                lista.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center">
+                    ${item.cantidad}x ${item.productoNombre}
+                    <span>$${item.precioTotal} <button class="btn btn-sm btn-danger ms-2" onclick="eliminarDelCarrito(${index})">X</button></span>
+                </li>`;
+            });
+        }
+        spanTotal.innerText = total.toFixed(2);
+    }
+
+    window.eliminarDelCarrito = (index) => {
+        carritoActual.splice(index, 1);
+        actualizarUICarrito();
+    };
+
+    document.getElementById("btn-agregar-carrito").addEventListener("click", () => {
+        if(!prodSeleccionadoInfo) {
+            alert("Por favor, seleccioná un producto primero.");
+            return;
+        }
+        
+        const nombreCli = document.getElementById("cli-nombre").value;
+        const telefono = document.getElementById("cli-telefono").value;
+        const precioPagado = parseFloat(inputPrecioFinal.value);
+        const cantidadVender = parseInt(inputCantidadVender.value);
+
+        if (!nombreCli || !telefono || isNaN(precioPagado) || isNaN(cantidadVender) || cantidadVender < 1) {
+            alert("Por favor, completá todos los campos correctamente.");
+            return;
+        }
+
+        // Chequear stock sumando lo que ya pusimos en el carrito
+        let stockEnCarrito = 0;
+        carritoActual.forEach(item => {
+            if(item.productoId === prodSeleccionadoInfo.id) {
+                stockEnCarrito += item.cantidad;
+            }
+        });
+
+        if (!prodSeleccionadoInfo.codigosActivos || (prodSeleccionadoInfo.codigosActivos.length - stockEnCarrito) < cantidadVender) {
+            alert("No hay stock suficiente para agregar esta cantidad al pedido.");
+            return;
+        }
+
+        carritoActual.push({
+            productoId: prodSeleccionadoInfo.id,
+            productoNombre: prodSeleccionadoInfo.nombre,
+            cantidad: cantidadVender,
+            precioTotal: precioPagado,
+            costoUnitario: prodSeleccionadoInfo.costo,
+            cliente: nombreCli,
+            telefono: telefono
+        });
+
+        actualizarUICarrito();
+        inputCantidadVender.value = 1;
+        recalcularPrecioPorDefecto();
+    });
+
+    document.getElementById("btn-confirmar-venta").addEventListener("click", async () => {
+        if (carritoActual.length === 0) {
+            alert("El pedido está vacío. Agregá productos al subtotal primero.");
+            return;
+        }
+
+        try {
+            const fechaVenta = new Date();
+
+            for (let item of carritoActual) {
+                // Buscamos la info actualizada del producto
+                let prodDB = productosActuales.find(p => p.id === item.productoId);
+                
+                const codigosVendidos = prodDB.codigosActivos.slice(0, item.cantidad);
+                
+                // Actualizamos el arreglo en memoria para el siguiente item del bucle si se repitiera el producto
+                prodDB.codigosActivos = prodDB.codigosActivos.slice(item.cantidad);
+
+                await addDoc(collection(db, "ventas"), {
+                    cliente: item.cliente,
+                    telefono: item.telefono,
+                    productoId: item.productoId,
+                    productoNombre: item.productoNombre,
+                    codigoUnico: codigosVendidos.join(', '), 
+                    cantidadVendida: item.cantidad,
+                    costo: item.costoUnitario, 
+                    precioPagado: item.precioTotal,
+                    fecha: fechaVenta
+                });
+
+                const refProducto = doc(db, "productos", item.productoId);
+                await updateDoc(refProducto, {
+                    codigosActivos: prodDB.codigosActivos
+                });
+            }
+
+            alert("¡Pedido confirmado completo y stock descontado!");
+            
+            carritoActual = [];
+            actualizarUICarrito();
+            document.getElementById("form-venta").reset();
+            prodSeleccionadoInfo = null;
+            metricas.innerHTML = "Aquí aparecerá el margen de ganancia al seleccionar un producto...";
+
+        } catch(error) {
+            console.error("Error completo:", error);
+            alert("Error al procesar la venta: " + error.message);
+        }
+    });
+
+    document.getElementById("btn-whatsapp").addEventListener("click", () => {
+        if(carritoActual.length === 0) {
+            alert("No hay productos en el pedido para enviar por WhatsApp.");
+            return;
+        }
+
+        const cliente = carritoActual[0].cliente;
+        const telefono = carritoActual[0].telefono;
+        let total = 0;
+        let detalle = "";
+
+        carritoActual.forEach(item => {
+            detalle += `- ${item.cantidad}x ${item.productoNombre} ($${item.precioTotal})\n`;
+            total += item.precioTotal;
+        });
+
+        const mensaje = `Hola ${cliente}! Confirmamos tu pedido:\n\n${detalle}\nEl total es de: *$${total}*.\n\nDatos para transferir: [ACA TUS DATOS DE CBU/ALIAS].\n\n¡Gracias por tu compra!`;
+        const url = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
+        window.open(url, '_blank');
+    });
+
+    window.eliminarProducto = async (id) => {
+        if(confirm("¿Seguro que querés eliminar todo el grupo de este producto? (Se borran todos sus códigos en stock)")) {
+            await deleteDoc(doc(db, "productos", id));
+        }
+    };
+
+</script>
+</body>
+</html>

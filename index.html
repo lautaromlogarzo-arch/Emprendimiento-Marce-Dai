@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Stock y Ventas</title>
-    <!-- Ícono para la pestaña del navegador -->
     <link rel="icon" type="image/png" href="nuez_transparente.png">
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -45,7 +44,6 @@
 <body>
 
 <div class="container mt-4">
-    <!-- Encabezado con Logo a la izquierda, más grande y sin fondo blanco -->
     <div class="encabezado-naranja d-flex align-items-center">
         <div class="text-center me-4">
             <img src="logo_LL.png" alt="Logo LL" style="max-height: 80px;">
@@ -56,7 +54,6 @@
         <h2 class="mb-0 ms-auto">PANEL CENTRAL DE CONTROL</h2>
     </div>
 
-    <!-- Barra de solapas -->
     <div class="barra-solapas">
         <ul class="nav nav-tabs" id="myTab" role="tablist">
             <li class="nav-item" role="presentation">
@@ -79,7 +76,6 @@
 
     <div class="tab-content" id="myTabContent">
 
-        <!-- SOLAPA 1: INGRESO DE STOCK -->
         <div class="tab-pane fade show active" id="stock" role="tabpanel">
             <div class="row">
                 <div class="col-md-5">
@@ -96,16 +92,16 @@
                                 <input type="text" id="prod-prefijo" class="form-control" placeholder="Ej: MCM (se generará MCM-00001)" required>
                             </div>
                             <div class="mb-2">
-                                <label>Cantidad a ingresar</label>
-                                <input type="number" id="prod-cantidad" class="form-control" required>
+                                <label>Cantidad a ingresar (Admite decimales, ej: 1.5)</label>
+                                <input type="number" id="prod-cantidad" class="form-control" step="any" required>
                             </div>
                             <div class="mb-2">
                                 <label>Costo Unitario ($)</label>
-                                <input type="number" id="prod-costo" class="form-control" required>
+                                <input type="number" id="prod-costo" class="form-control" step="any" required>
                             </div>
                             <div class="mb-3">
                                 <label>Precio de Venta ($)</label>
-                                <input type="number" id="prod-precio" class="form-control" required>
+                                <input type="number" id="prod-precio" class="form-control" step="any" required>
                             </div>
                             <button type="submit" class="btn btn-primary w-100">Cargar Stock</button>
                         </form>
@@ -114,7 +110,6 @@
             </div>
         </div>
 
-        <!-- SOLAPA 2: RESUMEN DE STOCK -->
         <div class="tab-pane fade" id="resumen" role="tabpanel">
             <div class="card p-4">
                 <h5 class="mb-3">Stock Detallado (Agrupado)</h5>
@@ -135,7 +130,6 @@
             </div>
         </div>
 
-        <!-- SOLAPA 3: VENTAS Y CLIENTES -->
         <div class="tab-pane fade" id="ventas" role="tabpanel">
             <div class="row">
                 <div class="col-md-5">
@@ -158,12 +152,12 @@
                                 </select>
                             </div>
                             <div class="mb-2">
-                                <label>Cantidad a agregar</label>
-                                <input type="number" id="cli-cantidad-vender" class="form-control" value="1" min="1" required>
+                                <label>Cantidad a agregar (Admite gramos, ej: 0.3)</label>
+                                <input type="number" id="cli-cantidad-vender" class="form-control" value="1" min="0.001" step="any" required>
                             </div>
                             <div class="mb-3">
                                 <label>Precio Final (Total por este ítem)</label>
-                                <input type="number" id="cli-precio-final" class="form-control" required>
+                                <input type="number" id="cli-precio-final" class="form-control" step="any" required>
                             </div>
                             <button type="button" id="btn-agregar-carrito" class="btn btn-primary w-100 mb-2">Agregar al Pedido (Subtotal)</button>
                         </form>
@@ -186,7 +180,6 @@
             </div>
         </div>
 
-        <!-- SOLAPA 4: HISTORIAL DE VENTAS -->
         <div class="tab-pane fade" id="historial" role="tabpanel">
             <div class="card p-4">
                 <h4 class="mb-3">Historial de Ventas</h4>
@@ -208,7 +201,6 @@
             </div>
         </div>
 
-        <!-- SOLAPA 5: TRACKING FINANCIERO -->
         <div class="tab-pane fade" id="tracking" role="tabpanel">
             <div class="row mb-4">
                 <div class="col-md-6">
@@ -236,7 +228,6 @@
     </div>
 </div>
 
-<!-- Modal de Confirmación de Mensaje -->
 <div class="modal fade" id="modalConfirmacion" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -268,7 +259,7 @@
     const db = getFirestore(app);
 
     let productosActuales = [];
-    let carritoActual = []; // Array para manejar el subtotal
+    let carritoActual = []; 
 
     const ctx = document.getElementById('graficoVentas').getContext('2d');
     const miGrafico = new Chart(ctx, {
@@ -305,9 +296,12 @@
             const id = docSnap.id;
             
             let codigosActivos = data.codigosActivos || [];
-            let cantidadReal = codigosActivos.length;
             
-            let totalUnidadesHistoricas = data.ultimoSecuencial || codigosActivos.length;
+            // Lógica para admitir decimales en el stock
+            let cantidadReal = data.stockDisponible !== undefined ? parseFloat(data.stockDisponible) : codigosActivos.length;
+            
+            // Gasto histórico con soporte para gramos/decimales
+            let totalUnidadesHistoricas = data.stockHistoricoComprado !== undefined ? parseFloat(data.stockHistoricoComprado) : (data.ultimoSecuencial || codigosActivos.length);
             gastoTotalCalculado += (totalUnidadesHistoricas * (data.costo || 0));
 
             productosActuales.push({ id, ...data, cantidadReal });
@@ -318,12 +312,13 @@
             }
 
             let codigosBadge = codigosActivos.map(c => `<span class="badge bg-secondary me-1">${c}</span>`).join('');
+            let displayCantidad = Number.isInteger(cantidadReal) ? cantidadReal : cantidadReal.toFixed(3).replace(/\.?0+$/, '');
             
             tabla.innerHTML += `
                 <tr class="cursor-pointer" data-bs-toggle="collapse" data-bs-target="#colapsa-${id}">
                     <td><strong>${data.prefijo}</strong></td>
                     <td>${data.nombre} ⬇️</td>
-                    <td>${cantidadReal}</td>
+                    <td>${displayCantidad}</td>
                     <td>$${data.precio}</td>
                     <td>
                         <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); eliminarProducto('${id}')">X</button>
@@ -338,7 +333,7 @@
             `;
 
             if(cantidadReal > 0) {
-                selectVenta.innerHTML += `<option value="${id}">${data.nombre} (${data.prefijo}) - $${data.precio} (Stock: ${cantidadReal})</option>`;
+                selectVenta.innerHTML += `<option value="${id}">${data.nombre} (${data.prefijo}) - $${data.precio} (Stock: ${displayCantidad})</option>`;
             }
         });
 
@@ -367,7 +362,7 @@
                 datalistClientes.innerHTML += `<option value="${venta.cliente}">`;
             }
 
-            let cant = venta.cantidadVendida || 1;
+            let cant = venta.cantidadVendida !== undefined ? parseFloat(venta.cantidadVendida) : 1;
             let costo = venta.costo || 0;
             let costoTotal = costo * cant;
             let margenReal = venta.precioPagado - costoTotal;
@@ -379,16 +374,17 @@
             ventasPorMes[mesVenta] += 1;
 
             let fechaStr = venta.fecha.toDate().toLocaleString('es-AR', {dateStyle: 'short', timeStyle: 'short'});
+            let displayCant = Number.isInteger(cant) ? cant : cant.toFixed(3).replace(/\.?0+$/, '');
 
             tablaHistorial.innerHTML += `
                 <tr>
                     <td>${fechaStr}</td>
                     <td>${venta.cliente}</td>
                     <td>${venta.productoNombre} <br><small class="text-muted">${venta.codigoUnico}</small></td>
-                    <td>${cant}</td>
-                    <td>$${costoTotal}</td>
-                    <td>$${venta.precioPagado}</td>
-                    <td><strong>${margenPorcentaje}%</strong> ($${margenReal})</td>
+                    <td>${displayCant}</td>
+                    <td>$${costoTotal.toFixed(2)}</td>
+                    <td>$${venta.precioPagado.toFixed(2)}</td>
+                    <td><strong>${margenPorcentaje}%</strong> ($${margenReal.toFixed(2)})</td>
                 </tr>
             `;
         });
@@ -402,7 +398,9 @@
         e.preventDefault();
         const nombre = document.getElementById("prod-nombre").value;
         const prefijo = document.getElementById("prod-prefijo").value.toUpperCase();
-        const cantidad = parseInt(document.getElementById("prod-cantidad").value);
+        
+        // ParseFloat para soportar ingresos de 1.5 kg, 0.3 kg, etc.
+        const cantidad = parseFloat(document.getElementById("prod-cantidad").value);
         const costo = parseFloat(document.getElementById("prod-costo").value);
         const precio = parseFloat(document.getElementById("prod-precio").value);
 
@@ -412,14 +410,25 @@
 
             let ultimoSecuencial = 0;
             let codigosActivos = [];
+            let stockDisponibleAnterior = 0;
+            let stockHistorico = 0;
 
             if (docSnap.exists()) {
                 let data = docSnap.data();
                 ultimoSecuencial = data.ultimoSecuencial || 0;
                 codigosActivos = data.codigosActivos || [];
+                stockDisponibleAnterior = data.stockDisponible !== undefined ? parseFloat(data.stockDisponible) : codigosActivos.length;
+                stockHistorico = data.stockHistoricoComprado !== undefined ? parseFloat(data.stockHistoricoComprado) : ultimoSecuencial;
             }
 
-            for(let i = 0; i < cantidad; i++) {
+            // Uso de toFixed para evitar errores de precisión de decimales (ej 0.3+0.6=0.899)
+            let nuevoStockTotal = parseFloat((stockDisponibleAnterior + cantidad).toFixed(3));
+            let nuevoStockHistorico = parseFloat((stockHistorico + cantidad).toFixed(3));
+            
+            // Generamos los códigos físicos enteros necesarios para cubrir el stock total
+            let codigosFaltantes = Math.ceil(nuevoStockTotal) - codigosActivos.length;
+
+            for(let i = 0; i < codigosFaltantes; i++) {
                 ultimoSecuencial++;
                 let numFormateado = String(ultimoSecuencial).padStart(5, '0');
                 codigosActivos.push(`${prefijo}-${numFormateado}`);
@@ -432,11 +441,13 @@
                 precio: precio,
                 ultimoSecuencial: ultimoSecuencial,
                 codigosActivos: codigosActivos,
+                stockDisponible: nuevoStockTotal,
+                stockHistoricoComprado: nuevoStockHistorico,
                 ultimaActualizacion: new Date()
             }, { merge: true });
 
             document.getElementById("form-stock").reset();
-            alert("¡Stock cargado y códigos generados!");
+            alert("¡Stock cargado exitosamente!");
 
         } catch (error) {
             console.error("Error al cargar:", error);
@@ -444,7 +455,7 @@
         }
     });
 
-    // --- LÓGICA DE VENTAS (SUBTOTAL) ---
+    // --- LÓGICA DE VENTAS (SUBTOTAL CON DECIMALES) ---
     const selectProducto = document.getElementById("cli-producto");
     const inputPrecioFinal = document.getElementById("cli-precio-final");
     const inputCantidadVender = document.getElementById("cli-cantidad-vender");
@@ -454,8 +465,8 @@
 
     function recalcularPrecioPorDefecto() {
         if(prodSeleccionadoInfo) {
-            const cant = parseInt(inputCantidadVender.value) || 1;
-            inputPrecioFinal.value = prodSeleccionadoInfo.precio * cant;
+            const cant = parseFloat(inputCantidadVender.value) || 1;
+            inputPrecioFinal.value = (prodSeleccionadoInfo.precio * cant).toFixed(2);
             calcularMargen();
         }
     }
@@ -472,14 +483,14 @@
     function calcularMargen() {
         if(!prodSeleccionadoInfo) return;
         const precioCobrado = parseFloat(inputPrecioFinal.value) || 0;
-        const cant = parseInt(inputCantidadVender.value) || 1;
+        const cant = parseFloat(inputCantidadVender.value) || 1;
         const costoTotal = prodSeleccionadoInfo.costo * cant;
         const gananciaReal = precioCobrado - costoTotal;
-        const gananciaPorcentaje = ((gananciaReal / costoTotal) * 100).toFixed(2);
+        const gananciaPorcentaje = costoTotal > 0 ? ((gananciaReal / costoTotal) * 100).toFixed(2) : 100;
         
         metricas.innerHTML = `
             <strong>Margen de Ganancia (Total de este ítem):</strong><br>
-            Ganancia Real: $${gananciaReal}<br>
+            Ganancia Real: $${gananciaReal.toFixed(2)}<br>
             Porcentual: ${gananciaPorcentaje}%
         `;
     }
@@ -495,9 +506,10 @@
         } else {
             carritoActual.forEach((item, index) => {
                 total += item.precioTotal;
+                let displayCant = Number.isInteger(item.cantidad) ? item.cantidad : item.cantidad.toFixed(3).replace(/\.?0+$/, '');
                 lista.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center">
-                    ${item.cantidad}x ${item.productoNombre}
-                    <span>$${item.precioTotal} <button class="btn btn-sm btn-danger ms-2" onclick="eliminarDelCarrito(${index})">X</button></span>
+                    ${displayCant}x ${item.productoNombre}
+                    <span>$${item.precioTotal.toFixed(2)} <button class="btn btn-sm btn-danger ms-2" onclick="eliminarDelCarrito(${index})">X</button></span>
                 </li>`;
             });
         }
@@ -518,14 +530,13 @@
         const nombreCli = document.getElementById("cli-nombre").value;
         const telefono = document.getElementById("cli-telefono").value;
         const precioPagado = parseFloat(inputPrecioFinal.value);
-        const cantidadVender = parseInt(inputCantidadVender.value);
+        const cantidadVender = parseFloat(inputCantidadVender.value);
 
-        if (!nombreCli || !telefono || isNaN(precioPagado) || isNaN(cantidadVender) || cantidadVender < 1) {
+        if (!nombreCli || !telefono || isNaN(precioPagado) || isNaN(cantidadVender) || cantidadVender <= 0) {
             alert("Por favor, completá todos los campos correctamente.");
             return;
         }
 
-        // Chequear stock sumando lo que ya pusimos en el carrito
         let stockEnCarrito = 0;
         carritoActual.forEach(item => {
             if(item.productoId === prodSeleccionadoInfo.id) {
@@ -533,7 +544,7 @@
             }
         });
 
-        if (!prodSeleccionadoInfo.codigosActivos || (prodSeleccionadoInfo.codigosActivos.length - stockEnCarrito) < cantidadVender) {
+        if ((prodSeleccionadoInfo.cantidadReal - stockEnCarrito) < cantidadVender) {
             alert("No hay stock suficiente para agregar esta cantidad al pedido.");
             return;
         }
@@ -553,20 +564,16 @@
         recalcularPrecioPorDefecto();
     });
 
-    // Lógica para ABRIR el modal de confirmación
     document.getElementById("btn-confirmar-venta").addEventListener("click", () => {
         if (carritoActual.length === 0) {
             alert("El pedido está vacío. Agregá productos al subtotal primero.");
             return;
         }
-        // Abre el modal flotante de Bootstrap
         let miModal = new bootstrap.Modal(document.getElementById('modalConfirmacion'));
         miModal.show();
     });
 
-    // Lógica de SÍ confirmar (botón verde del modal)
     document.getElementById("btn-si-confirmar").addEventListener("click", async () => {
-        // Ocultamos el modal
         let miModal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmacion'));
         if (miModal) miModal.hide();
 
@@ -574,20 +581,29 @@
             const fechaVenta = new Date();
 
             for (let item of carritoActual) {
-                // Buscamos la info actualizada del producto
                 let prodDB = productosActuales.find(p => p.id === item.productoId);
                 
-                const codigosVendidos = prodDB.codigosActivos.slice(0, item.cantidad);
+                // Calculamos cuánto stock va a quedar y si eso amerita dar de baja un código entero
+                let nuevoStock = parseFloat((prodDB.cantidadReal - item.cantidad).toFixed(3));
+                let codigosSobrantes = Math.ceil(nuevoStock);
+                let cantidadCodigosConsumidos = prodDB.codigosActivos.length - codigosSobrantes;
                 
-                // Actualizamos el arreglo en memoria para el siguiente item del bucle si se repitiera el producto
-                prodDB.codigosActivos = prodDB.codigosActivos.slice(item.cantidad);
+                let codigosVendidos = [];
+                if(cantidadCodigosConsumidos > 0) {
+                    // Solo borramos el código de la BD si se consumió la unidad entera
+                    codigosVendidos = prodDB.codigosActivos.slice(0, cantidadCodigosConsumidos);
+                    prodDB.codigosActivos = prodDB.codigosActivos.slice(cantidadCodigosConsumidos);
+                }
+
+                // Actualizamos temporalmente en memoria para el bucle (si compró 2 veces del mismo producto)
+                prodDB.cantidadReal = nuevoStock;
 
                 await addDoc(collection(db, "ventas"), {
                     cliente: item.cliente,
                     telefono: item.telefono,
                     productoId: item.productoId,
                     productoNombre: item.productoNombre,
-                    codigoUnico: codigosVendidos.join(', '), 
+                    codigoUnico: codigosVendidos.length > 0 ? codigosVendidos.join(', ') : 'Fracción a Granel', 
                     cantidadVendida: item.cantidad,
                     costo: item.costoUnitario, 
                     precioPagado: item.precioTotal,
@@ -596,6 +612,7 @@
 
                 const refProducto = doc(db, "productos", item.productoId);
                 await updateDoc(refProducto, {
+                    stockDisponible: nuevoStock,
                     codigosActivos: prodDB.codigosActivos
                 });
             }
@@ -621,10 +638,8 @@
         }
 
         const cliente = carritoActual[0].cliente;
-        let telefono = carritoActual[0].telefono.toString(); // Asegurar que sea string
+        let telefono = carritoActual[0].telefono.toString(); 
         
-        // CORRECCIÓN WHATSAPP ANDROID: 
-        // Si el número tiene 10 dígitos (ej: 1124041633), agregamos 549 adelante automáticamente
         if (telefono.length === 10) {
             telefono = "549" + telefono;
         }
@@ -633,12 +648,12 @@
         let detalle = "";
 
         carritoActual.forEach(item => {
-            detalle += `- ${item.cantidad}x ${item.productoNombre} ($${item.precioTotal})\n`;
+            let displayCant = Number.isInteger(item.cantidad) ? item.cantidad : item.cantidad.toFixed(3).replace(/\.?0+$/, '');
+            detalle += `- ${displayCant}x ${item.productoNombre} ($${item.precioTotal.toFixed(2)})\n`;
             total += item.precioTotal;
         });
 
-        // CORRECCIÓN MENSAJE MERCADO PAGO
-        const mensaje = `Hola ${cliente}! Confirmamos tu pedido:\n\n${detalle}\nEl total es de: *$${total}*.\n\nDatos para transferir:\nMercado Pago\nAlias: Mieles.naturales\nA nombre de Daiana Gisela Logarzo\n\n¡Gracias por tu compra!`;
+        const mensaje = `Hola ${cliente}! Confirmamos tu pedido:\n\n${detalle}\nEl total es de: *$${total.toFixed(2)}*.\n\nDatos para transferir:\nMercado Pago\nAlias: Mieles.naturales\nA nombre de Daiana Gisela Logarzo\n\n¡Gracias por tu compra!`;
         const url = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
         window.open(url, '_blank');
     });
